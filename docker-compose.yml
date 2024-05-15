@@ -1,0 +1,33 @@
+version: "3.3"
+networks:
+  container-link:
+    name: docker.internal
+services:
+  db:
+    image: postgres:14
+    container_name: postgres
+    ports:
+      - 5432:5432
+    networks:
+      - container-link
+    volumes:
+      - db-vol:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: passw0rd
+      POSTGRES_USER: dhuser
+      POSTGRES_DB: dhlocal
+  firebase:
+    build:
+      context: ./docker/firebase
+    ports:
+      - "4000:4000"
+      - "9099:9099"
+    networks:
+      - container-link
+    volumes:
+      - "./firebase.json:/home/node/firebase.json"
+    command: ["firebase", "emulators:start", "--project=local"]
+    environment:
+      - "FIREBASE_AUTH_EMULATOR_HOST=0.0.0.0:9099"
+volumes:
+  db-vol:
