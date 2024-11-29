@@ -218,13 +218,13 @@ func (e *OperatorEntityModel) ToModel() OperatorModel {
 }
 
 // ToModels
-// Summary: This is function which convert OperatorEntityModels to OperatorModels.
-// output: (OperatorModels) OperatorModels object
-func (es *OperatorEntityModels) ToModels() OperatorModels {
-	var ms OperatorModels
-	for _, v := range *es {
-		tm := v.ToModel()
-		ms = append(ms, &tm)
+// Summary: This is function which convert OperatorEntityModels to []OperatorModel.
+// output: ([]OperatorModel) slice of OperatorModel object
+func (es OperatorEntityModels) ToModels() []OperatorModel {
+	ms := make([]OperatorModel, len(es))
+	for i, e := range es {
+		m := e.ToModel()
+		ms[i] = m
 	}
 	return ms
 }

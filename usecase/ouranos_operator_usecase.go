@@ -10,7 +10,7 @@ type IOperatorUsecase interface {
 	// #2 GetOperatorItem
 	GetOperator(getOperatorInput traceability.GetOperatorInput) (traceability.OperatorModel, error)
 	// #17 GetOperatorList
-	GetOperators(getOperatorsInput traceability.GetOperatorsInput) (traceability.OperatorModels, error)
+	GetOperators(getOperatorsInput traceability.GetOperatorsInput) ([]traceability.OperatorModel, error)
 	// #1 PutOperatorItem
 	PutOperator(operatorModel traceability.OperatorModel) (traceability.OperatorModel, error)
 }

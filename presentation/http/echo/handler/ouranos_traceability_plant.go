@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"authenticator-backend/domain/common"
@@ -110,7 +109,6 @@ func (h *plantHandler) PutPlant(c echo.Context) error {
 
 		return echo.NewHTTPError(common.HTTPErrorGenerate(http.StatusBadRequest, common.HTTPErrorSourceAuth, common.Err400Validation, operatorID, dataTarget, method, errDetails))
 	}
-	fmt.Printf("PutPlantModel: %+v\n", putPlantModel)
 
 	m, err := h.plantUsecase.PutPlant(putPlantModel)
 	if err != nil {

@@ -4,15 +4,15 @@ import (
 	"fmt"
 
 	"authenticator-backend/domain/model/traceability"
-
-	"go.uber.org/zap"
+	"authenticator-backend/extension/logger"
 )
 
 func (r *ouranosRepository) GetCFPInformation(traceID string) (traceability.CfpEntityModel, error) {
 	var result traceability.CfpEntityModel
 
 	if err := r.db.Table("cfp_infomation").Where("trace_id = ?", traceID).First(&result).Error; err != nil {
-		zap.S().Errorf(err.Error())
+		logger.Set(nil).Errorf(err.Error())
+
 		return traceability.CfpEntityModel{}, err
 	}
 	return result, nil

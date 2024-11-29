@@ -48,6 +48,5 @@ func CustomHTTPErrorHandler(err error, c echo.Context) {
 		return
 	}
 
-	c.Echo().Logger.Error(err)
 	c.Echo().DefaultHTTPErrorHandler(err, c)
 }

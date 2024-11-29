@@ -34,28 +34,30 @@ func SetRouter(e *echo.Echo, h handler.AppHandler, config *config.Config, conn *
 	e.Use(middleware.BodyLimit("25M"))
 
 	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
-	e.Use(custom_middleware.APIKeyValidator(conn))
+
+	e.GET("/api/v1/authInfo/health", func(c echo.Context) error { return h.HealthCheck(c) })
+
+	authGroup := e.Group("")
+	authGroup.Use(custom_middleware.APIKeyValidator(conn))
 	if config.EnableIpRestriction {
-		e.Use(custom_middleware.IPForAPIKeyValidator(conn))
+		authGroup.Use(custom_middleware.IPForAPIKeyValidator(conn))
 	}
+	authGroup.PUT("/dataReset", func(c echo.Context) error { return h.Reset(c) }, authMiddleware.AuthJWT())
 
-	e.PUT("/dataReset", func(c echo.Context) error { return h.Reset(c) }, authMiddleware.AuthJWT())
-
-	auth := e.Group("/auth")
+	auth := authGroup.Group("/auth")
 	auth.Use(custom_middleware.AuthDump())
 	auth.POST("/login", func(c echo.Context) error { return h.Login(c) })
 	auth.POST("/refresh", func(c echo.Context) error { return h.Refresh(c) })
 	auth.POST("/change", func(c echo.Context) error { return h.ChangePassword(c) }, authMiddleware.AuthJWT())
 
-	systemAuth := e.Group("/api/v1/systemAuth")
+	systemAuth := authGroup.Group("/api/v1/systemAuth")
 	systemAuth.Use(custom_middleware.SystemAPIKeyValidator(conn))
 	systemAuth.Use(custom_middleware.AuthDump())
 	systemAuth.POST("/token", func(c echo.Context) error { return h.TokenIntrospection(c) })
 	systemAuth.POST("/apiKey", func(c echo.Context) error { return h.ApiKey(c) })
 
-	authInfo := e.Group("/api/v1/authInfo")
+	authInfo := authGroup.Group("/api/v1/authInfo")
 	authInfo.Use(authMiddleware.AuthJWT())
 	authInfo.GET("", func(c echo.Context) error { return h.GetAuthInfo(c) })
 	authInfo.PUT("", func(c echo.Context) error { return h.PutAuthInfo(c) })
-
 }

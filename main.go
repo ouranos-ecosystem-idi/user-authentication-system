@@ -16,7 +16,14 @@ import (
 func main() {
 	e := echo.New()
 
-	logger, _ := config.LoggerBuild()
+	cfg, err := config.NewConfig()
+	if err != nil {
+		e.Logger.Error("config error")
+
+		return
+	}
+
+	logger, _ := config.LoggerBuild(cfg)
 
 	defer func() {
 		err := logger.Sync()
@@ -26,13 +33,6 @@ func main() {
 	}()
 
 	zap.ReplaceGlobals(logger)
-
-	cfg, err := config.NewConfig()
-	if err != nil {
-		e.Logger.Error("config error")
-
-		return
-	}
 
 	switch cfg.LogLevel {
 	case "debug":

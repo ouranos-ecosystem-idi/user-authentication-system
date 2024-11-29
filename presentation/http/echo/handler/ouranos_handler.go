@@ -8,6 +8,7 @@ type OuranosHandler interface {
 	GetAuthInfo(c echo.Context) error
 	PutAuthInfo(c echo.Context) error
 	Reset(c echo.Context) error
+	HealthCheck(c echo.Context) error
 }
 
 // ouranosHandler

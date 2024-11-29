@@ -5,4 +5,4 @@ while read -r f; do
 	if [[ 0 -ne ${?} ]]; then
 		exit 1
 	fi
-done < <(find setup/seeders -mindepth 1 -maxdepth 1 -name "*.sql" | sort)
+done < <(find setup/seeders -name "*.sql" -mindepth 1 -maxdepth 1 | sort)

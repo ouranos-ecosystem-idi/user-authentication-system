@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"authenticator-backend/domain/model/traceability"
-
-	"go.uber.org/zap"
+	"authenticator-backend/extension/logger"
 )
 
 func (r *ouranosRepository) ListTradesByOperatorID(operatorID string) (traceability.TradeEntityModels, error) {
 	var result traceability.TradeEntityModels
 	if err := r.db.Table("trades").Where("downstream_operator_id = ?", operatorID).Or("upstream_operator_id = ?", operatorID).Find(&result).Error; err != nil {
-		zap.S().Errorf(err.Error())
+		logger.Set(nil).Errorf(err.Error())
+
 		return traceability.TradeEntityModels{}, err
 	}
 	return result, nil

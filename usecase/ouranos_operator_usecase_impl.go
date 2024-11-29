@@ -67,9 +67,9 @@ func (u *operatorUsecase) GetOperator(getOperatorInput traceability.GetOperatorI
 // GetOperators
 // Summary: This is function which get list of operator.
 // input: GetOperatorsInput(GetOperatorsInput) GetOperatorsInput object
-// output: (OperatorModels) OperatorModels object
+// output: ([]OperatorModel) slice of OperatorModel object
 // output: (error) error object
-func (u *operatorUsecase) GetOperators(getOperatorsInput traceability.GetOperatorsInput) (traceability.OperatorModels, error) {
+func (u *operatorUsecase) GetOperators(getOperatorsInput traceability.GetOperatorsInput) ([]traceability.OperatorModel, error) {
 	operatorIDs := []string{}
 	for _, operatorID := range getOperatorsInput.OperatorIDs {
 		operatorIDs = append(operatorIDs, operatorID.String())
@@ -78,7 +78,7 @@ func (u *operatorUsecase) GetOperators(getOperatorsInput traceability.GetOperato
 	if err != nil {
 		logger.Set(nil).Errorf(err.Error())
 
-		return traceability.OperatorModels{}, err
+		return []traceability.OperatorModel{}, err
 	}
 	return es.ToModels(), nil
 }

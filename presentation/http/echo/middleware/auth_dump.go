@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"encoding/json"
-	"fmt"
 	"path"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	echo_middleware "github.com/labstack/echo/v4/middleware"
+	"go.uber.org/zap"
 )
 
 const (
@@ -201,11 +201,19 @@ type authDumpInfo struct {
 // input: event(string): event type to dump
 // input: isRequestResult(bool): is request successful
 func authDump(c echo.Context, reqBody, resBody interface{}, event string, isRequestResult bool) {
+
+	tempReqBody := reqBody
+	tempResBody := resBody
+	if zap.S().Level() != zap.DebugLevel {
+		tempReqBody = "******"
+		tempResBody = "******"
+	}
+
 	dump := authDumpInfo{
 		Event:            event,
 		IsRequestResult:  isRequestResult,
-		RequestBody:      reqBody,
-		ResponseBody:     resBody,
+		RequestBody:      tempReqBody,
+		ResponseBody:     tempResBody,
 		TimeStamp:        time.Now(),
 		RequestIpAddress: c.RealIP(),
 		RequestApiKey:    c.Request().Header.Get("apiKey"),
@@ -217,7 +225,12 @@ func authDump(c echo.Context, reqBody, resBody interface{}, event string, isRequ
 
 		return
 	}
-	fmt.Println(string(b))
+
+	if zap.S().Level() == zap.DebugLevel {
+		logger.Set(c).Debugf(string(b))
+	} else {
+		logger.Set(c).Infof(string(b))
+	}
 }
 
 // authDumpSkipper

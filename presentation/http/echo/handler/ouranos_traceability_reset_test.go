@@ -130,14 +130,16 @@ func TestProjectHandler_Reset_Abnormal(tt *testing.T) {
 	var endPoint = "/dataReset"
 
 	tests := []struct {
-		name        string
-		receive     error
-		expectError string
+		name         string
+		receive      error
+		expectError  string
+		expectStatus int
 	}{
 		{
-			name:        "2-1. 500: 異常系",
-			receive:     fmt.Errorf("Access Error"),
-			expectError: "code=500, message={[auth] InternalServerError Unexpected error occurred",
+			name:         "2-1. 500: 異常系",
+			receive:      fmt.Errorf("Access Error"),
+			expectError:  "code=500, message={[auth] InternalServerError Unexpected error occurred",
+			expectStatus: http.StatusInternalServerError,
 		},
 	}
 
@@ -164,7 +166,9 @@ func TestProjectHandler_Reset_Abnormal(tt *testing.T) {
 
 			resetUsecase.On("Reset", mock.Anything).Return(test.receive)
 			err := resetHandler.Reset(c)
+			e.HTTPErrorHandler(err, c)
 			if assert.Error(t, err) {
+				assert.Equal(t, test.expectStatus, rec.Code)
 				assert.ErrorContains(t, err, test.expectError)
 			}
 		})

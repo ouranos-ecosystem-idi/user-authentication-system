@@ -3,6 +3,8 @@ package datastore
 import (
 	"authenticator-backend/domain/model/traceability"
 	"authenticator-backend/extension/logger"
+
+	"gorm.io/gorm"
 )
 
 // GetOperator
@@ -56,10 +58,30 @@ func (r *ouranosRepository) GetOperators(operatorIDs []string) (traceability.Ope
 // input: e(traceability.OperatorEntityModel) OperatorEntityModel object
 // output: (traceability.OperatorEntityModel) OperatorEntityModel object
 // output: (error) error object
-func (r *ouranosRepository) PutOperator(operatorEntityModel traceability.OperatorEntityModel) (traceability.OperatorEntityModel, error) {
-	if err := r.db.Table("operators").Where("operator_id = ?", operatorEntityModel.OperatorID).Updates(&operatorEntityModel).Error; err != nil {
-		logger.Set(nil).Errorf(err.Error())
+func (r *ouranosRepository) PutOperator(e traceability.OperatorEntityModel) (traceability.OperatorEntityModel, error) {
+	updateValues := map[string]interface{}{
+		"operator_id":        e.OperatorID,
+		"operator_name":      e.OperatorName,
+		"operator_address":   e.OperatorAddress,
+		"open_operator_id":   e.OpenOperatorID,
+		"global_operator_id": e.GlobalOperatorID,
+	}
+
+	var updated traceability.OperatorEntityModel
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("operators").Where("operator_id = ?", e.OperatorID).Updates(updateValues).Error; err != nil {
+			logger.Set(nil).Errorf(err.Error())
+			return err
+		}
+		if err := tx.Table("operators").Where("operator_id = ?", e.OperatorID).First(&updated).Error; err != nil {
+			logger.Set(nil).Errorf(err.Error())
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
 		return traceability.OperatorEntityModel{}, err
 	}
-	return operatorEntityModel, nil
+	return updated, nil
 }

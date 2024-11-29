@@ -34,51 +34,58 @@ func TestProjectUsecase_GetOperator(tt *testing.T) {
 	var dataTarget = "operator"
 
 	operator := traceability.OperatorEntityModel{
-		OperatorID:       uuid.MustParse(f.OperatorID),
-		OperatorName:     f.OperatorName,
-		OperatorAddress:  f.OperatorAddress,
-		OpenOperatorID:   f.OpenOperatorID,
-		GlobalOperatorID: &f.GlobalOperatorID,
+		OperatorID:       uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+		OperatorName:     "A株式会社",
+		OperatorAddress:  "東京都",
+		OpenOperatorID:   "AAAA-123456",
+		GlobalOperatorID: common.StringPtr("GlobalOperatorId"),
 		DeletedAt: gorm.DeletedAt{
 			Time:  time.Now(),
 			Valid: true,
 		},
 		CreatedAt:         time.Now(),
-		CreatedOperatorID: f.OperatorID,
+		CreatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 		UpdatedAt:         time.Now(),
-		UpdatedOperatorID: f.OperatorID,
+		UpdatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 	}
 
 	expected := traceability.OperatorModel{
-		OperatorID:      uuid.MustParse(f.OperatorID),
-		OperatorName:    f.OperatorName,
-		OperatorAddress: f.OperatorAddress,
-		OpenOperatorID:  f.OpenOperatorID,
+		OperatorID:      uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+		OperatorName:    "A株式会社",
+		OperatorAddress: "東京都",
+		OpenOperatorID:  "AAAA-123456",
 		OperatorAttribute: traceability.OperatorAttribute{
-			GlobalOperatorID: &f.GlobalOperatorID,
+			GlobalOperatorID: common.StringPtr("GlobalOperatorId"),
 		},
 	}
 
 	tests := []struct {
 		name               string
 		openOperatorSearch bool
-		input              traceability.GetOperatorInput
+		inputFunc          func() traceability.GetOperatorInput
 		receive            traceability.OperatorEntityModel
 		expect             traceability.OperatorModel
 	}{
 		{
 			name:               "1-1. 200: 全項目応答(公開事業者識別子)",
 			openOperatorSearch: true,
-			input:              f.NewGetOperatorInput(true),
-			receive:            operator,
-			expect:             expected,
+			inputFunc: func() traceability.GetOperatorInput {
+				getOperatorInput := f.NewGetOperatorInput()
+				getOperatorInput.OperatorID = ""
+				getOperatorInput.OpenOperatorID = &f.OpenOperatorID
+				return getOperatorInput
+			},
+			receive: operator,
+			expect:  expected,
 		},
 		{
 			name:               "1-2. 200: 全項目応答(内部事業者識別子)",
 			openOperatorSearch: false,
-			input:              f.NewGetOperatorInput(false),
-			receive:            operator,
-			expect:             expected,
+			inputFunc: func() traceability.GetOperatorInput {
+				return f.NewGetOperatorInput()
+			},
+			receive: operator,
+			expect:  expected,
 		},
 	}
 
@@ -108,15 +115,11 @@ func TestProjectUsecase_GetOperator(tt *testing.T) {
 				}
 				operatorUsecase := usecase.NewOperatorUsecase(ouranosRepositoryMock)
 
-				actual, err := operatorUsecase.GetOperator(test.input)
+				actual, err := operatorUsecase.GetOperator(test.inputFunc())
 				if assert.NoError(t, err) {
 					// 実際のレスポンスと期待されるレスポンスを比較
 					// 順番が実行ごとに異なるため、順不同で中身を比較
-					assert.Equal(t, test.expect.OperatorID, actual.OperatorID, f.AssertMessage)
-					assert.Equal(t, test.expect.OperatorName, actual.OperatorName, f.AssertMessage)
-					assert.Equal(t, test.expect.OperatorAddress, actual.OperatorAddress, f.AssertMessage)
-					assert.Equal(t, test.expect.OpenOperatorID, actual.OpenOperatorID, f.AssertMessage)
-					assert.Equal(t, test.expect.OperatorAttribute.GlobalOperatorID, actual.OperatorAttribute.GlobalOperatorID, f.AssertMessage)
+					assert.Equal(t, test.expect, actual, f.AssertMessage)
 				}
 			},
 		)
@@ -140,37 +143,52 @@ func TestProjectUsecase_GetOperator_Abnormal(tt *testing.T) {
 	tests := []struct {
 		name               string
 		openOperatorSearch bool
-		input              traceability.GetOperatorInput
+		inputFunc          func() traceability.GetOperatorInput
 		receive            error
 		expect             error
 	}{
 		{
 			name:               "2-1. 400: データ取得エラー(公開事業者識別子)",
 			openOperatorSearch: true,
-			input:              f.NewGetOperatorInput(true),
-			receive:            dsResGetError,
-			expect:             dsResGetError,
+			inputFunc: func() traceability.GetOperatorInput {
+				getOperatorInput := f.NewGetOperatorInput()
+				getOperatorInput.OperatorID = ""
+				getOperatorInput.OpenOperatorID = &f.OpenOperatorID
+				return getOperatorInput
+
+			},
+			receive: dsResGetError,
+			expect:  dsResGetError,
 		},
 		{
 			name:               "2-2. 400: データ取得エラー(内部事業者識別子)",
 			openOperatorSearch: false,
-			input:              f.NewGetOperatorInput(false),
-			receive:            dsResGetError,
-			expect:             dsResGetError,
+			inputFunc: func() traceability.GetOperatorInput {
+				return f.NewGetOperatorInput()
+			},
+			receive: dsResGetError,
+			expect:  dsResGetError,
 		},
 		{
 			name:               "2-3. 400: データ取得エラー(公開事業者識別子)",
 			openOperatorSearch: true,
-			input:              f.NewGetOperatorInput(true),
-			receive:            gorm.ErrRecordNotFound,
-			expect:             gorm.ErrRecordNotFound,
+			inputFunc: func() traceability.GetOperatorInput {
+				getOperatorInput := f.NewGetOperatorInput()
+				getOperatorInput.OperatorID = ""
+				getOperatorInput.OpenOperatorID = &f.OpenOperatorID
+				return getOperatorInput
+			},
+			receive: gorm.ErrRecordNotFound,
+			expect:  gorm.ErrRecordNotFound,
 		},
 		{
 			name:               "2-4. 400: データ取得エラー(内部事業者識別子)",
 			openOperatorSearch: false,
-			input:              f.NewGetOperatorInput(false),
-			receive:            gorm.ErrRecordNotFound,
-			expect:             gorm.ErrRecordNotFound,
+			inputFunc: func() traceability.GetOperatorInput {
+				return f.NewGetOperatorInput()
+			},
+			receive: gorm.ErrRecordNotFound,
+			expect:  gorm.ErrRecordNotFound,
 		},
 	}
 
@@ -201,7 +219,7 @@ func TestProjectUsecase_GetOperator_Abnormal(tt *testing.T) {
 
 				operatorUsecase := usecase.NewOperatorUsecase(ouranosRepositoryMock)
 
-				_, err := operatorUsecase.GetOperator(test.input)
+				_, err := operatorUsecase.GetOperator(test.inputFunc())
 				if assert.Error(t, err) {
 					// 実際のレスポンスと期待されるレスポンスを比較
 					// 順番が実行ごとに異なるため、順不同で中身を比較
@@ -225,30 +243,30 @@ func TestProjectUsecase_GetOperators(tt *testing.T) {
 
 	operator := traceability.OperatorEntityModels{
 		{
-			OperatorID:       uuid.MustParse(f.OperatorID),
-			OperatorName:     f.OperatorName,
-			OperatorAddress:  f.OperatorAddress,
-			OpenOperatorID:   f.OpenOperatorID,
-			GlobalOperatorID: &f.GlobalOperatorID,
+			OperatorID:       uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+			OperatorName:     "A株式会社",
+			OperatorAddress:  "東京都",
+			OpenOperatorID:   "AAAA-123456",
+			GlobalOperatorID: common.StringPtr("GlobalOperatorId"),
 			DeletedAt: gorm.DeletedAt{
 				Time:  time.Now(),
 				Valid: true,
 			},
 			CreatedAt:         time.Now(),
-			CreatedOperatorID: f.OperatorID,
+			CreatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 			UpdatedAt:         time.Now(),
-			UpdatedOperatorID: f.OperatorID,
+			UpdatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 		},
 	}
 
-	expected := traceability.OperatorModels{
+	expected := []traceability.OperatorModel{
 		{
-			OperatorID:      uuid.MustParse(f.OperatorID),
-			OperatorName:    f.OperatorName,
+			OperatorID:      uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+			OperatorName:    "A株式会社",
 			OperatorAddress: f.OperatorAddress,
-			OpenOperatorID:  f.OpenOperatorID,
+			OpenOperatorID:  "AAAA-123456",
 			OperatorAttribute: traceability.OperatorAttribute{
-				GlobalOperatorID: &f.GlobalOperatorID,
+				GlobalOperatorID: common.StringPtr("GlobalOperatorId"),
 			},
 		},
 	}
@@ -257,7 +275,7 @@ func TestProjectUsecase_GetOperators(tt *testing.T) {
 		name    string
 		input   traceability.GetOperatorsInput
 		receive traceability.OperatorEntityModels
-		expect  traceability.OperatorModels
+		expect  []traceability.OperatorModel
 	}{
 		{
 			name:    "1-1. 200: 全項目応答",
@@ -366,6 +384,7 @@ func TestProjectUsecase_GetOperators_Abnormal(tt *testing.T) {
 // Target: ouranos_operator_usecase.go
 // TestPattern:
 // [x] 1-1. 200: 全項目応答
+// [x] 1-2. 200: 全項目応答(更新NULLあり)
 func TestProjectUsecase_PutOperator(tt *testing.T) {
 
 	var method = "PUT"
@@ -373,32 +392,77 @@ func TestProjectUsecase_PutOperator(tt *testing.T) {
 	var dataTarget = "operator"
 
 	operator := traceability.OperatorEntityModel{
-		OperatorID:       uuid.MustParse(f.OperatorID),
-		OperatorName:     f.OperatorName,
-		OperatorAddress:  f.OperatorAddress,
-		OpenOperatorID:   f.OpenOperatorID,
-		GlobalOperatorID: &f.GlobalOperatorID,
+		OperatorID:       uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+		OperatorName:     "A株式会社",
+		OperatorAddress:  "東京都",
+		OpenOperatorID:   "AAAA-123456",
+		GlobalOperatorID: common.StringPtr("GlobalOperatorId"),
 		DeletedAt: gorm.DeletedAt{
 			Time:  time.Now(),
 			Valid: true,
 		},
 		CreatedAt:         time.Now(),
-		CreatedOperatorID: f.OperatorID,
+		CreatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 		UpdatedAt:         time.Now(),
-		UpdatedOperatorID: f.OperatorID,
+		UpdatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
+	}
+
+	operatorNull := traceability.OperatorEntityModel{
+		OperatorID:       uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+		OperatorName:     "A株式会社",
+		OperatorAddress:  "東京都",
+		OpenOperatorID:   "AAAA-123456",
+		GlobalOperatorID: nil,
+		DeletedAt: gorm.DeletedAt{
+			Time:  time.Now(),
+			Valid: true,
+		},
+		CreatedAt:         time.Now(),
+		CreatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
+		UpdatedAt:         time.Now(),
+		UpdatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 	}
 
 	tests := []struct {
-		name    string
-		input   traceability.OperatorModel
-		receive traceability.OperatorEntityModel
-		expect  traceability.OperatorModel
+		name      string
+		inputFunc func() traceability.OperatorModel
+		receive   traceability.OperatorEntityModel
+		expect    traceability.OperatorModel
 	}{
 		{
-			name:    "1-1. 200: 全項目応答",
-			input:   f.NewOperatorModel(f.OperatorID, f.OpenOperatorID),
+			name: "1-1. 200: 全項目応答",
+			inputFunc: func() traceability.OperatorModel {
+				operatorModel := f.NewOperatorModel()
+				return operatorModel
+			},
 			receive: operator,
-			expect:  f.NewOperatorModel(f.OperatorID, f.OpenOperatorID),
+			expect: traceability.OperatorModel{
+				OperatorID:      uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+				OperatorName:    "A株式会社",
+				OperatorAddress: "東京都",
+				OpenOperatorID:  "AAAA-123456",
+				OperatorAttribute: traceability.OperatorAttribute{
+					GlobalOperatorID: common.StringPtr("GlobalOperatorId"),
+				},
+			},
+		},
+		{
+			name: "1-2. 200: 全項目応答(更新NULLあり)",
+			inputFunc: func() traceability.OperatorModel {
+				operatorModel := f.NewOperatorModel()
+				operatorModel.OperatorAttribute.GlobalOperatorID = nil
+				return operatorModel
+			},
+			receive: operatorNull,
+			expect: traceability.OperatorModel{
+				OperatorID:      uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+				OperatorName:    "A株式会社",
+				OperatorAddress: "東京都",
+				OpenOperatorID:  "AAAA-123456",
+				OperatorAttribute: traceability.OperatorAttribute{
+					GlobalOperatorID: nil,
+				},
+			},
 		},
 	}
 
@@ -426,15 +490,11 @@ func TestProjectUsecase_PutOperator(tt *testing.T) {
 
 				operatorUsecase := usecase.NewOperatorUsecase(ouranosRepositoryMock)
 
-				actual, err := operatorUsecase.PutOperator(test.input)
+				actual, err := operatorUsecase.PutOperator(test.inputFunc())
 				if assert.NoError(t, err) {
 					// 実際のレスポンスと期待されるレスポンスを比較
 					// 順番が実行ごとに異なるため、順不同で中身を比較
-					assert.Equal(t, test.expect.OperatorID, actual.OperatorID, f.AssertMessage)
-					assert.Equal(t, test.expect.OperatorName, actual.OperatorName, f.AssertMessage)
-					assert.Equal(t, test.expect.OperatorAddress, actual.OperatorAddress, f.AssertMessage)
-					assert.Equal(t, test.expect.OpenOperatorID, actual.OpenOperatorID, f.AssertMessage)
-					assert.Equal(t, test.expect.OperatorAttribute.GlobalOperatorID, actual.OperatorAttribute.GlobalOperatorID, f.AssertMessage)
+					assert.Equal(t, test.expect, actual, f.AssertMessage)
 				}
 			},
 		)
@@ -454,54 +514,64 @@ func TestProjectUsecase_PutOperator_Abnormal(tt *testing.T) {
 	var dataTarget = "operator"
 
 	operator := traceability.OperatorEntityModel{
-		OperatorID:       uuid.MustParse(f.OperatorID),
-		OperatorName:     f.OperatorName,
-		OperatorAddress:  f.OperatorAddress,
-		OpenOperatorID:   f.OpenOperatorID,
-		GlobalOperatorID: &f.GlobalOperatorID,
+		OperatorID:       uuid.MustParse("e03cc699-7234-31ed-86be-cc18c92208e5"),
+		OperatorName:     "A株式会社",
+		OperatorAddress:  "東京都",
+		OpenOperatorID:   "AAAA-123456",
+		GlobalOperatorID: common.StringPtr("GlobalOperatorId"),
 		DeletedAt: gorm.DeletedAt{
 			Time:  time.Now(),
 			Valid: true,
 		},
 		CreatedAt:         time.Now(),
-		CreatedOperatorID: f.OperatorID,
+		CreatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 		UpdatedAt:         time.Now(),
-		UpdatedOperatorID: f.OperatorID,
+		UpdatedOperatorID: "e03cc699-7234-31ed-86be-cc18c92208e5",
 	}
 
 	dsResGetError := fmt.Errorf("DB AccessError")
 
 	tests := []struct {
 		name         string
-		input        traceability.OperatorModel
+		inputFunc    func() traceability.OperatorModel
 		receive      *traceability.OperatorEntityModel
 		receiveError error
 		expect       error
 	}{
 		{
-			name:         "2-1. 400: データ取得エラー",
-			input:        f.NewOperatorModel(f.OperatorID, f.OpenOperatorID),
+			name: "2-1. 400: データ取得エラー",
+			inputFunc: func() traceability.OperatorModel {
+				return f.NewOperatorModel()
+			},
 			receive:      nil,
 			receiveError: dsResGetError,
 			expect:       dsResGetError,
 		},
 		{
-			name:         "2-2. 400: データ更新エラー",
-			input:        f.NewOperatorModel(f.OperatorID, f.OpenOperatorID),
+			name: "2-2. 400: データ更新エラー",
+			inputFunc: func() traceability.OperatorModel {
+				return f.NewOperatorModel()
+			},
 			receive:      &operator,
 			receiveError: dsResGetError,
 			expect:       dsResGetError,
 		},
 		{
-			name:         "2-3. 400: データ更新エラー",
-			input:        f.NewOperatorModel(f.OperatorID, "AAAA-12345"),
+			name: "2-3. 400: データ更新エラー",
+			inputFunc: func() traceability.OperatorModel {
+				operatorModel := f.NewOperatorModel()
+				operatorModel.OpenOperatorID = "AAAA-12345"
+				return operatorModel
+			},
 			receive:      &operator,
 			receiveError: common.NewCustomError(common.CustomErrorCode400, fmt.Errorf(common.FieldIsImutable("openOperatorID")).Error(), nil, common.HTTPErrorSourceAuth),
 			expect:       common.NewCustomError(common.CustomErrorCode400, fmt.Errorf(common.FieldIsImutable("openOperatorID")).Error(), nil, common.HTTPErrorSourceAuth),
 		},
 		{
-			name:    "2-4. 500: データ更新エラー",
-			input:   f.NewOperatorModel(f.OperatorID, f.OpenOperatorID),
+			name: "2-4. 500: データ更新エラー",
+			inputFunc: func() traceability.OperatorModel {
+				return f.NewOperatorModel()
+			},
 			receive: &operator,
 			receiveError: &pgconn.PgError{
 				Severity:         "ERROR",
@@ -525,8 +595,10 @@ func TestProjectUsecase_PutOperator_Abnormal(tt *testing.T) {
 			expect: common.NewCustomError(common.CustomErrorCode400, "globalOperatorId: GlobalOperatorId is already exists.", nil, common.HTTPErrorSourceAuth),
 		},
 		{
-			name:    "2-4. 500: データ更新エラー",
-			input:   f.NewOperatorModel(f.OperatorID, f.OpenOperatorID),
+			name: "2-4. 500: データ更新エラー",
+			inputFunc: func() traceability.OperatorModel {
+				return f.NewOperatorModel()
+			},
 			receive: &operator,
 			receiveError: &pgconn.PgError{
 				Severity:         "ERROR",
@@ -597,7 +669,7 @@ func TestProjectUsecase_PutOperator_Abnormal(tt *testing.T) {
 
 				operatorUsecase := usecase.NewOperatorUsecase(ouranosRepositoryMock)
 
-				_, err := operatorUsecase.PutOperator(test.input)
+				_, err := operatorUsecase.PutOperator(test.inputFunc())
 				if assert.Error(t, err) {
 					// 実際のレスポンスと期待されるレスポンスを比較
 					// 順番が実行ごとに異なるため、順不同で中身を比較

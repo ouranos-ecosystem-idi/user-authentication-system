@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"authenticator-backend/domain/common"
+	"authenticator-backend/extension/logger"
 
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -13,17 +13,15 @@ import (
 // input: reqBody([]byte): request body
 // input: resBody([]byte): response body
 func dumpHandler(c echo.Context, reqBody, resBody []byte) {
-	var operatorID string
-	i := c.Get("operatorID")
-	if i != nil {
-		operatorID = i.(string)
+	if zap.S().Level() == zap.DebugLevel {
+		logger.Set(c).Debugf("Auth Access Path: %v, Header: %v, Request Body: %v, Response Body: %v", c.Request().URL.String(), c.Request().Header, string(reqBody), string(resBody))
+	} else {
+		header := c.Request().Header
+		for k := range header {
+			if k == "Authorization" {
+				header[k] = []string{"Bearer ******"}
+			}
+		}
+		logger.Set(c).Infof("Auth Access Path: %v, Header: %v, Request Body: ******, Response Body: ******", c.Request().URL.String(), c.Request().Header)
 	}
-	zap.S().Infof("DataSpaceAPI Access Path: %v, OperatorId: %v, Header: %v, Request Body: %v, Response Body: %v", c.Request().URL.String(), operatorID, c.Request().Header, string(reqBody), string(resBody))
-}
-
-// dumpSkipper
-// Summary: This is the function which skips the dump.
-// output: (bool) true if skip, false otherwise
-func dumpSkipper(c echo.Context) bool {
-	return !common.IsOutputDump()
 }
