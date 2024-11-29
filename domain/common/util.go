@@ -1,7 +1,6 @@
 package common
 
 import (
-	"os"
 	"strings"
 
 	"github.com/google/uuid"
@@ -13,20 +12,6 @@ import (
 // output: (*string) pointer to the string value
 func StringPtr(s string) *string {
 	return &s
-}
-
-// IsOutputDump
-// Summary: This is function which checks whether the output dump is enabled.
-// output: (bool) true if the output dump is enabled, false otherwise
-func IsOutputDump() bool {
-	executeEnv := os.Getenv("GO_ENV")
-	outputDumpEnvs := []string{"local", "dev", "sbx", "qa", "stg", "uat"}
-	for _, v := range outputDumpEnvs {
-		if executeEnv == v {
-			return true
-		}
-	}
-	return false
 }
 
 // GenerateUUIDString

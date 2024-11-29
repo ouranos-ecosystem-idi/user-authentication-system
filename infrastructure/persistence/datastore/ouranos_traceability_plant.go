@@ -6,6 +6,8 @@ import (
 	"authenticator-backend/domain/common"
 	"authenticator-backend/domain/model/traceability"
 	"authenticator-backend/extension/logger"
+
+	"gorm.io/gorm"
 )
 
 // CreatePlant
@@ -57,11 +59,31 @@ func (r *ouranosRepository) ListPlantsByOperatorID(operatorID string) (traceabil
 // output: (traceability.PlantEntityModel) PlantEntityModel object
 // output: (error) error object
 func (r *ouranosRepository) UpdatePlant(e traceability.PlantEntityModel) (traceability.PlantEntityModel, error) {
-	if err := r.db.Table("plants").Where("plant_id = ?", e.PlantID).Updates(&e).Error; err != nil {
-		logger.Set(nil).Errorf(err.Error())
+	updateValues := map[string]interface{}{
+		"plant_id":        e.PlantID,
+		"operator_id":     e.OperatorID,
+		"plant_name":      e.PlantName,
+		"plant_address":   e.PlantAddress,
+		"open_plant_id":   e.OpenPlantID,
+		"global_plant_id": e.GlobalPlantID,
+	}
+	var updated traceability.PlantEntityModel
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Table("plants").Where("plant_id = ?", e.PlantID).Updates(updateValues).Error; err != nil {
+			logger.Set(nil).Errorf(err.Error())
+			return err
+		}
+		if err := tx.Table("plants").Where("plant_id = ?", e.PlantID).First(&updated).Error; err != nil {
+			logger.Set(nil).Errorf(err.Error())
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
 		return traceability.PlantEntityModel{}, err
 	}
-	return e, nil
+	return updated, nil
 }
 
 // DeletePlant

@@ -21,8 +21,9 @@ func (h *authHandler) TokenIntrospection(c echo.Context) error {
 
 	if err := c.Bind(&param); err != nil {
 		logger.Set(c).Warnf(err.Error())
+		errDetails := common.FormatBindErrMsg(err)
 
-		return echo.NewHTTPError(common.HTTPErrorGenerate(http.StatusBadRequest, common.HTTPErrorSourceAuth, common.Err400InvalidRequest, "", "", method))
+		return echo.NewHTTPError(common.HTTPErrorGenerate(http.StatusBadRequest, common.HTTPErrorSourceAuth, common.Err400InvalidRequest, "", "", method, errDetails))
 	}
 	if err := param.Validate(); err != nil {
 		logger.Set(c).Warnf(err.Error())
@@ -58,8 +59,9 @@ func (h *authHandler) ApiKey(c echo.Context) error {
 
 	if err := c.Bind(&param); err != nil {
 		logger.Set(c).Warnf(err.Error())
+		errDetails := common.FormatBindErrMsg(err)
 
-		return echo.NewHTTPError(common.HTTPErrorGenerate(http.StatusBadRequest, common.HTTPErrorSourceAuth, common.Err400InvalidJSON, "", "", method))
+		return echo.NewHTTPError(common.HTTPErrorGenerate(http.StatusBadRequest, common.HTTPErrorSourceAuth, common.Err400InvalidRequest, "", "", method, errDetails))
 	}
 
 	if err := param.Validate(); err != nil {

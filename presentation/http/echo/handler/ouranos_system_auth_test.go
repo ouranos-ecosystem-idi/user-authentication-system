@@ -96,13 +96,15 @@ func TestProjectHandler_SystemAuthToken(tt *testing.T) {
 		invalidInput any
 		receive      error
 		expectError  string
+		expectStatus int
 	}{
 		{
 			name: "1-1. 400: バリデーションエラー：idTokenが含まれていない場合",
 			input: input.VerifyTokenParam{
 				IDToken: "",
 			},
-			expectError: "code=400, message={[auth] BadRequest Validation failed, idToken: cannot be blank.",
+			expectError:  "code=400, message={[auth] BadRequest Validation failed, idToken: cannot be blank.",
+			expectStatus: http.StatusBadRequest,
 		},
 		{
 			name: "1-2. 400: バリデーションエラー：idTokenがstring形式でない場合",
@@ -111,15 +113,17 @@ func TestProjectHandler_SystemAuthToken(tt *testing.T) {
 			}{
 				1,
 			},
-			expectError: "code=400, message={[auth] BadRequest Invalid request parameters",
+			expectError:  "code=400, message={[auth] BadRequest Invalid request parameters",
+			expectStatus: http.StatusBadRequest,
 		},
 		{
 			name: "1-3. 503: 外部システムエラー：接続エラー",
 			input: input.VerifyTokenParam{
 				IDToken: f.Token,
 			},
-			receive:     common.NewCustomError(common.CustomErrorCode503, common.Err503OuterService, nil, common.HTTPErrorSourceAuth),
-			expectError: "code=503, message={[auth] ServiceUnavailable",
+			receive:      common.NewCustomError(common.CustomErrorCode503, common.Err503OuterService, nil, common.HTTPErrorSourceAuth),
+			expectError:  "code=503, message={[auth] ServiceUnavailable",
+			expectStatus: http.StatusServiceUnavailable,
 		},
 	}
 
@@ -157,7 +161,9 @@ func TestProjectHandler_SystemAuthToken(tt *testing.T) {
 				verifyUsecase.On("TokenIntrospection", test.input).Return(res, test.receive)
 
 				err := authHandler.TokenIntrospection(c)
+				e.HTTPErrorHandler(err, c)
 				if assert.Error(t, err) {
+					assert.Equal(t, test.expectStatus, rec.Code)
 					assert.ErrorContains(t, err, test.expectError)
 				}
 			},
@@ -238,6 +244,7 @@ func TestProjectHandler_SystemAuthApiKey(tt *testing.T) {
 		input        input.VerifyAPIKeyParam
 		invalidInput any
 		expectError  string
+		expectStatus int
 	}{
 		{
 			name: "1-1. 400: バリデーションエラー：IPAddressが含まれていない場合",
@@ -245,7 +252,8 @@ func TestProjectHandler_SystemAuthApiKey(tt *testing.T) {
 				IPAddress: "",
 				APIKey:    f.ApiKey,
 			},
-			expectError: "code=400, message={[auth] BadRequest Validation failed, ipAddress: cannot be blank.",
+			expectError:  "code=400, message={[auth] BadRequest Validation failed, ipAddress: cannot be blank.",
+			expectStatus: http.StatusBadRequest,
 		},
 		{
 			name: "1-2. 400: バリデーションエラー：APIKeyが含まれていない場合",
@@ -253,7 +261,8 @@ func TestProjectHandler_SystemAuthApiKey(tt *testing.T) {
 				IPAddress: f.IpAddress,
 				APIKey:    "",
 			},
-			expectError: "code=400, message={[auth] BadRequest Validation failed, apiKey: cannot be blank.",
+			expectError:  "code=400, message={[auth] BadRequest Validation failed, apiKey: cannot be blank.",
+			expectStatus: http.StatusBadRequest,
 		},
 		{
 			name: "1-3. 400: バリデーションエラー：リクエスト不正の場合",
@@ -264,7 +273,8 @@ func TestProjectHandler_SystemAuthApiKey(tt *testing.T) {
 				1,
 				1,
 			},
-			expectError: "code=400, message={[auth] BadRequest Invalid JSON format",
+			expectError:  "code=400, message={[auth] BadRequest Invalid request parameters",
+			expectStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -299,7 +309,9 @@ func TestProjectHandler_SystemAuthApiKey(tt *testing.T) {
 				)
 
 				err := authHandler.ApiKey(c)
+				e.HTTPErrorHandler(err, c)
 				if assert.Error(t, err) {
+					assert.Equal(t, test.expectStatus, rec.Code)
 					assert.ErrorContains(t, err, test.expectError)
 				}
 			},

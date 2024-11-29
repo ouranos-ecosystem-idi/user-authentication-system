@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"net/http"
+	"os"
+	"strings"
 
 	"authenticator-backend/domain/common"
 	"authenticator-backend/domain/repository"
@@ -22,7 +24,20 @@ func IPForAPIKeyValidator(db *gorm.DB) echo.MiddlewareFunc {
 			authRepository := datastore.NewAuthRepository(db)
 			method := c.Request().Method
 			apiKey := c.Request().Header.Get(apiKeyHeader)
-			ip := c.RealIP()
+
+			env := os.Getenv("GO_ENV")
+			var ip string
+			if env == "local" {
+				ip = c.RealIP()
+			} else {
+				xff := c.Request().Header.Get("X-Forwarded-For") // X-Forwarded-For: APP_IP, ALB_IP
+				ips := strings.Split(xff, ", ")
+				if len(ips) < 2 {
+					return echo.NewHTTPError(common.HTTPErrorGenerate(http.StatusForbidden, common.HTTPErrorSourceAuth, common.Err403IPNotAuthorizedForKey, "", "", method))
+				}
+				ip = ips[len(ips)-2]
+			}
+
 			dummyBody := dummyBodyApikeyIp{APIKey: apiKey, IP: ip}
 
 			cidrs, err := authRepository.ListCidrs(repository.APIKeyCidrsParam{APIKey: &apiKey})
