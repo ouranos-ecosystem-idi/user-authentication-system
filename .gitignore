@@ -3,13 +3,6 @@ main
 .*.swp
 *~
 
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
 # act
 .secrets
 
@@ -17,6 +10,13 @@ tmp/
 .data
 .storage
 cmd/add_local_user/credentials
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
 # Test binary, built with `go test -c`
 *.test
